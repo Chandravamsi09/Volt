@@ -4,8 +4,11 @@ Automated Model-to-ONNX Graph Serialization & Optimizer
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-import numpy as np
-import torch
+try:
+    import torch
+except ImportError:
+    torch = None
+
 from backend.app.core.exceptions import ModelRegistryError
 
 
@@ -14,12 +17,15 @@ class ONNXConverter:
 
     @staticmethod
     def convert_pytorch_to_onnx(
-        model: torch.nn.Module,
+        model: Any,
         input_dim: int,
         output_onnx_path: str,
         dynamic_batch: bool = True,
     ) -> str:
         """Export PyTorch Module to ONNX graph."""
+        if torch is None:
+            raise ModelRegistryError("PyTorch is required for convert_pytorch_to_onnx.")
+
         Path(output_onnx_path).parent.mkdir(parents=True, exist_ok=True)
         model.eval()
         dummy_input = torch.randn(1, input_dim, dtype=torch.float32)

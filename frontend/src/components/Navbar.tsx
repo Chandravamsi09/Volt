@@ -1,7 +1,15 @@
+"use client";
+
 import React from "react";
-import { Zap, Bell, Terminal, ShieldCheck } from "lucide-react";
+import { Zap, Bell, Terminal, ShieldCheck, LogOut, User as UserIcon } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export const Navbar: React.FC = () => {
+  const { user, logout } = useAuth();
+
+  const displayName = user?.full_name || user?.username || "ML Engineer";
+  const displayRole = user?.role ? user.role.replace("_", " ").toUpperCase() : "ML ENGINEER";
+
   return (
     <header className="h-16 border-b border-surface-border bg-surface/50 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-3">
@@ -17,17 +25,37 @@ export const Navbar: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-xs text-gray-400 bg-surface px-3 py-1.5 rounded-md border border-surface-border">
+        <div className="flex items-center gap-2 text-xs text-gray-300 bg-surface px-3 py-1.5 rounded-md border border-surface-border">
           <ShieldCheck className="w-4 h-4 text-volt-emerald" />
-          <span>RBAC: ML Engineer</span>
+          <span className="font-medium text-white">{displayName}</span>
+          <span className="text-gray-500 font-mono">|</span>
+          <span className="text-gray-400">RBAC: {displayRole}</span>
         </div>
-        <button className="p-2 rounded-md hover:bg-surface text-gray-400 hover:text-white transition">
+
+        <button 
+          title="Notifications"
+          className="p-2 rounded-md hover:bg-surface text-gray-400 hover:text-white transition"
+        >
           <Bell className="w-4 h-4" />
         </button>
-        <button className="p-2 rounded-md hover:bg-surface text-gray-400 hover:text-white transition">
+
+        <button 
+          title="Terminal Console"
+          className="p-2 rounded-md hover:bg-surface text-gray-400 hover:text-white transition"
+        >
           <Terminal className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={logout}
+          title="Sign Out of Volt Platform"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 hover:text-red-300 text-xs font-medium transition"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Logout</span>
         </button>
       </div>
     </header>
   );
 };
+

@@ -5,22 +5,39 @@ Volt Authentication & Security Primitives
 import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional, Union
 from jose import jwt
-from passlib.context import CryptContext
+import bcrypt
 from backend.app.core.config import settings
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain password against the stored bcrypt hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a plain password against the stored bcrypt or pbkdf2 hash."""
+    try:
+        if hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$"):
+            return bcrypt.checkpw(
+                plain_password.encode("utf-8")[:72],
+                hashed_password.encode("utf-8"),
+            )
+        # Fallback PBKDF2 hash check
+        salt, h = hashed_password.split(":", 1)
+        check = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt.encode("utf-8"), 100000).hex()
+        return secrets.compare_digest(h, check)
+    except Exception:
+        return False
 
 
 def get_password_hash(password: str) -> str:
     """Generate bcrypt hash from plain text password."""
-    return pwd_context.hash(password)
+    try:
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode("utf-8")[:72], salt)
+        return hashed.decode("utf-8")
+    except Exception:
+        # Fallback PBKDF2-HMAC-SHA256
+        salt = secrets.token_hex(16)
+        h = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100000).hex()
+        return f"{salt}:{h}"
+
 
 
 def create_access_token(
