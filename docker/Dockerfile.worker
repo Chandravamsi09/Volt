@@ -1,0 +1,36 @@
+# ==============================================================================
+# Volt Celery Background Worker & Scheduler Dockerfile
+# ==============================================================================
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml backend/requirements.txt ./
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --user -r requirements.txt
+
+# Final Runtime Image
+FROM python:3.11-slim AS runner
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH=/root/.local/bin:$PATH \
+    PYTHONPATH=/app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /root/.local /root/.local
+COPY backend /app/backend
+COPY sdk /app/sdk
+COPY cli /app/cli
+COPY pyproject.toml /app/
+
+CMD ["celery", "-A", "backend.app.workers.celery_app", "worker", "--beat", "--loglevel=info", "--concurrency=4"]

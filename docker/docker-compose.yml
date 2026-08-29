@@ -1,0 +1,121 @@
+version: "3.9"
+
+services:
+  # PostgreSQL RDBMS
+  postgres:
+    image: postgres:16-alpine
+    container_name: volt_postgres
+    environment:
+      POSTGRES_USER: volt_admin
+      POSTGRES_PASSWORD: volt_secure_password
+      POSTGRES_DB: volt_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U volt_admin -d volt_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis Online Feature Store & Celery Message Broker
+  redis:
+    image: redis:7.2-alpine
+    container_name: volt_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:v1.9.1
+    container_name: volt_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  # MinIO S3-Compatible Object Storage
+  minio:
+    image: minio/minio:RELEASE.2024-05-10T01-41-38Z
+    container_name: volt_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: volt_minio_admin
+      MINIO_ROOT_PASSWORD: volt_minio_secret_key
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  # FastAPI Backend Service
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: volt_api
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://volt_admin:volt_secure_password@postgres:5432/volt_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - QDRANT_HOST=qdrant
+      - DATA_LAKE_PATH=/app/data/lakehouse
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - shared_lakehouse:/app/data
+
+  # Celery Background Worker
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    container_name: volt_worker
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://volt_admin:volt_secure_password@postgres:5432/volt_db
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - DATA_LAKE_PATH=/app/data/lakehouse
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - shared_lakehouse:/app/data
+
+  # Next.js Frontend Dashboard
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: volt_frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  minio_data:
+  shared_lakehouse:
