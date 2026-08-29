@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Volt Enterprise AI/ML & Data Lakehouse Platform"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
+license = { text = "Proprietary" }
 authors = [
     { name = "Volt Engineering Team", email = "engineering@volt-ml.io" }
 ]

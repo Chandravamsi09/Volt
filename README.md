@@ -3,7 +3,7 @@
 <div align="center">
 
 [![CI Pipeline](https://github.com/Chandravamsi09/Volt/actions/workflows/ci.yml/badge.svg)](https://github.com/Chandravamsi09/Volt/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Next.js](https://img.shields.io/badge/Next.js-15_App_Router-black.svg)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111.0-009688.svg)](https://fastapi.tiangolo.com/)
@@ -83,4 +83,4 @@ Volt includes multi-tier test suites verifying:
 ---
 
 ## 📄 License
-Apache License 2.0. See [LICENSE](LICENSE) for details.
+Proprietary & Confidential. All rights reserved by the Volt Engineering Team.
