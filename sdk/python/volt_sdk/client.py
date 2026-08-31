@@ -73,3 +73,7 @@ class VoltClient:
         resp = httpx.post(url, json={"query": query, "top_k": top_k}, headers=self._headers)
         resp.raise_for_status()
         return resp.json()["data"]
+
+    def get_model_lineage(self, name: str, version: str) -> Dict[str, Any]:
+        """Fetch cryptographic model provenance and training lineage."""
+        return self._request("GET", f"/models/{name}/{version}/lineage")
