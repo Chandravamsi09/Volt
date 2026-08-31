@@ -19,6 +19,19 @@ from backend.app.schemas.common import StandardResponse
 router = APIRouter(prefix="/features", tags=["Feature Store"])
 
 
+
+class OnlineBatchWriteRequest(BaseModel):
+    view_name: str
+    entity_key: str
+    features_dict: Dict[str, Dict[str, Any]]
+    ttl_seconds: Optional[int] = None
+
+
+class OnlineDeleteRequest(BaseModel):
+    view_name: str
+    entity_key: str
+    entity_ids: List[str]
+
 class OnlineFetchRequest(BaseModel):
     view_name: str
     entity_key: str
@@ -70,3 +83,27 @@ async def materialize_feature_view(view_name: str, entity_key: str):
     materializer = FeatureMaterializer()
     res = await materializer.materialize_view(feature_view=view, entity_key=entity_key)
     return StandardResponse(data=res, message="Materialization executed")
+
+@router.post("/online/batch-write", response_model=StandardResponse[Dict[str, int]])
+async def batch_write_online_features(payload: OnlineBatchWriteRequest):
+    """Bulk write features into online low-latency Redis feature cache."""
+    online_store = OnlineFeatureStore()
+    count = await online_store.write_online_features(
+        view_name=payload.view_name,
+        entity_key=payload.entity_key,
+        features_dict=payload.features_dict,
+        ttl_seconds=payload.ttl_seconds,
+    )
+    return StandardResponse(data={"written_records": count}, message=f"Successfully materialized {count} records into online store.")
+
+
+@router.delete("/online/delete", response_model=StandardResponse[Dict[str, int]])
+async def delete_online_features(payload: OnlineDeleteRequest):
+    """Evict entities from online feature cache."""
+    online_store = OnlineFeatureStore()
+    deleted = await online_store.delete_online_features(
+        view_name=payload.view_name,
+        entity_key=payload.entity_key,
+        entity_ids=payload.entity_ids,
+    )
+    return StandardResponse(data={"deleted_records": deleted}, message=f"Evicted {deleted} entities from online store.")
