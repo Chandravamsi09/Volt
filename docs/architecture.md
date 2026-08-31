@@ -61,4 +61,4 @@ Volt is a cloud-native, distributed Enterprise AI/ML & Data Platform designed to
 
 ### 5. Observability & Drift Monitoring
 - **Statistical Detector**: Population Stability Index (PSI) & Kolmogorov-Smirnov (KS) test.
-- **Automated Retraining**: Drift triggers activating Celery training workflows.
+- **Automated Retraining & Webhooks**: Drift triggers activating Celery training workflows and dispatching Slack/PagerDuty incident webhooks.
