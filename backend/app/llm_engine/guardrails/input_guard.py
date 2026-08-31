@@ -68,3 +68,25 @@ class PromptGuardrail:
 
 
 guardrail = PromptGuardrail()
+
+    def scan_and_audit(self, text: str) -> dict:
+        """Run comprehensive multi-vector safety audit and return diagnostic report."""
+        injection_detected = self.check_prompt_injection(text)
+        sanitized_text = self.redact_pii(text)
+        pii_found = sanitized_text != text
+
+        risk_score = 0.0
+        if injection_detected:
+            risk_score += 0.8
+        if pii_found:
+            risk_score += 0.4
+        risk_score = min(risk_score, 1.0)
+
+        return {
+            "is_safe": not injection_detected and risk_score < 0.7,
+            "prompt_injection_flagged": injection_detected,
+            "pii_detected": pii_found,
+            "sanitized_content": sanitized_text,
+            "risk_score": round(risk_score, 2),
+            "safety_action": "BLOCK" if injection_detected else ("SANITIZE" if pii_found else "ALLOW"),
+        }
