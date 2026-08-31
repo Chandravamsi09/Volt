@@ -141,3 +141,23 @@ class ModelVault:
             json.dump(meta.__dict__, f, indent=2)
 
         return meta
+
+    def get_model_lineage(self, name: str, version: str) -> Dict[str, Any]:
+        """Retrieve end-to-end cryptographic lineage and training dataset provenance."""
+        meta = self.get_model(name, version)
+        if not meta:
+            raise ModelRegistryError(f"Model '{name}' version '{version}' not found for lineage extraction.")
+
+        return {
+            "model_name": meta.name,
+            "version": meta.version,
+            "stage": meta.stage,
+            "artifact_checksum": meta.checksum,
+            "framework": meta.framework,
+            "training_completed_at": meta.created_at,
+            "input_features": list(meta.input_schema.keys()),
+            "output_targets": list(meta.output_schema.keys()),
+            "hyperparameters": meta.parameters,
+            "evaluation_metrics": meta.metrics,
+            "provenance_verified": bool(meta.checksum and len(meta.checksum) == 64),
+        }

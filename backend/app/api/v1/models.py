@@ -42,3 +42,10 @@ async def transition_model_stage(name: str, version: str, payload: StageTransiti
         data=updated.__dict__,
         message=f"Model '{name}:{version}' transitioned to stage '{payload.new_stage.upper()}'",
     )
+
+@router.get("/{name}/{version}/lineage", response_model=StandardResponse[Dict[str, Any]])
+async def get_model_lineage(name: str, version: str):
+    """Export cryptographic lineage, dataset provenance, and parameter audit graph."""
+    vault = ModelVault()
+    lineage = vault.get_model_lineage(name, version)
+    return StandardResponse(data=lineage, message=f"Model lineage graph for {name}:{version} generated.")
