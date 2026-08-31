@@ -75,3 +75,14 @@ async def trigger_agent_workflow(payload: AgentWorkflowRequest):
         },
         message="Agent workflow executed",
     )
+
+class GuardrailValidationRequest(BaseModel):
+    prompt: str
+
+
+@router.post("/guardrails/validate", response_model=StandardResponse[Dict[str, Any]])
+async def validate_guardrails(payload: GuardrailValidationRequest):
+    """Verify and audit user input against injection attacks and PII disclosure."""
+    guard = InputGuardrail()
+    report = guard.scan_and_audit(payload.prompt)
+    return StandardResponse(data=report, message="Guardrail audit evaluation completed.")
