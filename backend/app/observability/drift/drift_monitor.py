@@ -130,3 +130,22 @@ class DriftMonitor:
 
 
 drift_monitor = DriftMonitor()
+
+    def build_drift_alert_payload(self, model_name: str, drift_results: Dict[str, Any], webhook_url: Optional[str] = None) -> Dict[str, Any]:
+        """Construct structured alert payload for enterprise incident webhooks (Slack/PagerDuty)."""
+        has_drift = drift_results.get("drift_detected", False)
+        severity = "HIGH" if has_drift and drift_results.get("mean_psi", 0.0) > 0.25 else ("MEDIUM" if has_drift else "INFO")
+        
+        return {
+            "alert_id": f"drift_alert_{model_name}",
+            "model_name": model_name,
+            "severity": severity,
+            "drift_detected": has_drift,
+            "metrics_summary": {
+                "features_analyzed": len(drift_results.get("feature_drift", {})),
+                "features_drifted": sum(1 for v in drift_results.get("feature_drift", {}).values() if v.get("drift_detected")),
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "recommended_action": "Trigger Automated Retraining Workflow" if has_drift else "Monitor",
+            "webhook_target": webhook_url,
+        }

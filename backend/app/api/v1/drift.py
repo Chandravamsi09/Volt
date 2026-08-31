@@ -34,3 +34,20 @@ async def evaluate_drift(payload: DriftCheckRequest):
         feature_columns=payload.feature_columns,
     )
     return StandardResponse(data=report.to_dict(), message="Drift evaluation completed")
+
+class DriftAlertRequest(BaseModel):
+    model_name: str
+    drift_results: Dict[str, Any]
+    webhook_url: Optional[str] = None
+
+
+@router.post("/alerts/webhook", response_model=StandardResponse[Dict[str, Any]])
+async def dispatch_drift_alert(payload: DriftAlertRequest):
+    """Format and dispatch dataset drift alert notification payload."""
+    monitor = DriftMonitor()
+    alert_payload = monitor.build_drift_alert_payload(
+        model_name=payload.model_name,
+        drift_results=payload.drift_results,
+        webhook_url=payload.webhook_url,
+    )
+    return StandardResponse(data=alert_payload, message="Drift alert payload prepared and dispatched.")
