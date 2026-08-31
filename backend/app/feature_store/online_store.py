@@ -85,3 +85,22 @@ class OnlineFeatureStore:
                 result[eid] = self._memory_cache.get(key)
 
         return result
+
+    async def delete_online_features(
+        self,
+        view_name: str,
+        entity_key: str,
+        entity_ids: List[str],
+    ) -> int:
+        """Delete specific entity records from the online feature store."""
+        client = await self._get_client()
+        keys = [self._make_key(view_name, entity_key, eid) for eid in entity_ids]
+        if client and not self._use_memory_fallback:
+            return await client.delete(*keys)
+        else:
+            deleted = 0
+            for k in keys:
+                if k in self._memory_cache:
+                    del self._memory_cache[k]
+                    deleted += 1
+            return deleted
