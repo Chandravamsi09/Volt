@@ -39,3 +39,13 @@ class HealthStatus(BaseSchema):
     database: str = "connected"
     redis: str = "connected"
     timestamp: datetime
+
+
+class ReadinessStatus(BaseSchema):
+    """Platform subsystem readiness probe schema."""
+    ready: bool = True
+    database_status: str = "ready"
+    redis_status: str = "ready"
+    lakehouse_accessible: bool = True
+    active_memory_mb: float = 0.0
+    timestamp: datetime
